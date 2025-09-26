@@ -1,0 +1,30 @@
+motor:
+  tread: 0.48
+  pid: { kp: 0.6, ki: 0.1, kd: 0.0 }
+  port: "/dev/ttyACM0"
+  baud: 115200
+
+sensors:
+  livox: { z_min: -0.4, z_max: 2.0, range_max: 30.0 }
+  imu: { port: "/dev/ttyUSBIMU", baud: 115200, bias_init_sec: 8.0 }
+  gps:
+    {
+      port_at: "/dev/ttyUSB2",
+      port_nmea: "/dev/ttyUSB1",
+      baud: 115200,
+      lat0: 36.1000,
+      lon0: 128.3800,
+      yaw0: 0.0,
+    }
+
+planner:
+  blade_width: 0.5
+  overlap: 0.15
+  pp_lookahead: 0.8
+  dwa: { horizon: 1.5, nv: 7, nw: 7, v_max: 0.8, w_max: 1.2 }
+
+safety:
+  geofence: [[0, 0], [20, 0], [20, 10], [0, 10]]
+  geofence_buffer: 0.7
+  stop_distance: 0.8
+  cmd_timeout_sec: 0.2
