@@ -44,6 +44,8 @@ public:
     prev_.reset(new CloudT);
     prev_set_ = false;
     T_odom_.setIdentity();
+    T_guess_acc_.setIdentity(); 
+    has_guess_ = false;
   }
 
   Result push_frame(py::array_t<float, py::array::c_style | py::array::forcecast> xyz,
@@ -78,7 +80,7 @@ public:
     }
 
 // 초기 추정(필요 시 IMU 기반으로 개선 가능)
-Eigen::Matrix4f T_guess = Eigen::Matrix4f::Identity();
+Eigen::Matrix4f T_guess = has_guess_ ? T_guess_acc_ : Eigen::Matrix4f::Identity();
 
 // --- NDT: source=prev_, target=curr  → 바로 prev->curr 산출
 pcl::NormalDistributionsTransform<PointT, PointT> ndt;
@@ -124,6 +126,9 @@ if (converged && std::isfinite(score)) {
 
   T_odom_ = T_odom_ * T_motion;
   prev_   = curr;
+
+  T_guess_acc_ = T_motion;   // 또는 T_guess_acc_ = T_guess_acc_ * T_motion; (누적 추정 유지형)
+  has_guess_ = true;
 }
 
     return out;
@@ -146,9 +151,12 @@ private:
   CloudT::Ptr prev_;
   bool prev_set_;
   Eigen::Matrix4f T_odom_;
+  Eigen::Matrix4f T_guess_acc_{Eigen::Matrix4f::Identity()}; // ★ 추가
+  bool has_guess_{false};                                     // ★ 추가
 };
 
 PYBIND11_MODULE(lidar_odom_ndt, m) {
+  m.attr("build_tag") = "guess_enabled_v1";
   py::class_<LidarOdomNDT>(m, "LidarOdomNDT")
     .def(py::init<>())
     .def("set_params", &LidarOdomNDT::set_params,
